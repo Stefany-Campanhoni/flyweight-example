@@ -10,9 +10,9 @@ public class Game extends JFrame implements Runnable {
     private static final int HEIGHT = 400;
     private static final int TILE_SIZE = 16;
 
-    private GameWorld world;
-    private Canvas gameCanvas;
-    private MemoryUsageView memoryView;
+    private final GameWorld world;
+    private final Canvas gameCanvas;
+    private final MemoryUsageView memoryView;
     private Timer updateTimer;
 
     private boolean running = false;
