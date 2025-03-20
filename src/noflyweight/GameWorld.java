@@ -1,3 +1,5 @@
+package noflyweight;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +21,7 @@ public class GameWorld {
     }
 
     private void initializeMap() {
-        // Create different types of tiles but reuse sprites
+        // Create different types of tiles - each with its own sprite instance
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 String tileType;
@@ -39,6 +41,7 @@ public class GameWorld {
                     tileType = "dirt";
                 }
 
+                // Create tile with direct sprite instance - no factory
                 map[y][x] = new Tile(x * 16, y * 16, tileType, walkable);
             }
         }
@@ -77,10 +80,10 @@ public class GameWorld {
     }
 
     private void initializeEntities() {
-        // Create player
+        // Create player with direct sprite
         player = new Player(width / 2 * 16, height / 2 * 16);
 
-        // Create enemies - notice we're using the same enemy types multiple times
+        // Create enemies - each with their own sprite instance
         String[] enemyTypes = {"moblin", "octorok", "darknut"};
         for (int i = 0; i < 100_000; i++) {
             int x = (int)(Math.random() * (width - 2) + 1) * 16;
@@ -89,7 +92,6 @@ public class GameWorld {
             entities.add(new Enemy(x, y, type));
         }
     }
-
 
     public Tile[][] getMap() {
         return map;
@@ -114,5 +116,10 @@ public class GameWorld {
     public int getHeight() {
         return height;
     }
+
+    public int getSpriteCount() {
+        return map.length * map[0].length + entities.size() + 1; // Total number of sprites
+    }
 }
+
 
