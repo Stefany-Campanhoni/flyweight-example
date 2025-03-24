@@ -3,7 +3,7 @@ import java.util.List;
 
 public class GameWorld {
     private final Tile[][] map;
-    private final List<GameObject> entities;
+    private final ArrayList<GameObject> entities;
     private Player player;
     private final int width;
     private final int height;
@@ -80,23 +80,51 @@ public class GameWorld {
         // Create player
         player = new Player(width / 2 * 16, height / 2 * 16);
 
-        // Create enemies - notice we're using the same enemy types multiple times
+        // Create only 3 enemies initially - one of each type
         String[] enemyTypes = {"moblin", "octorok", "darknut"};
-        for (int i = 0; i < 100_000; i++) {
-            int x = (int)(Math.random() * (width - 2) + 1) * 16;
-            int y = (int)(Math.random() * (height - 2) + 1) * 16;
+        for (int i = 0; i < 3; i++) {
+            int x, y;
+            boolean validPosition;
+            
+            do {
+                x = (int)(Math.random() * (width - 2) + 1) * 16;
+                y = (int)(Math.random() * (height - 2) + 1) * 16;
+                validPosition = isWalkable(x, y);
+            } while (!validPosition);
+            
             String type = enemyTypes[i % enemyTypes.length];
             entities.add(new Enemy(x, y, type));
         }
     }
 
+    public void addEnemy(Enemy enemy) {
+        entities.add(enemy);
+    }
+
+    // For spawning new enemies
+    public Enemy spawnEnemy() {
+        String[] enemyTypes = {"moblin", "octorok", "darknut"};
+        int x, y;
+        boolean validPosition;
+        
+        do {
+            x = (int)(Math.random() * (width - 2) + 1) * 16;
+            y = (int)(Math.random() * (height - 2) + 1) * 16;
+            validPosition = isWalkable(x, y);
+        } while (!validPosition);
+        
+        String type = enemyTypes[(int)(Math.random() * enemyTypes.length)];
+        Enemy enemy = new Enemy(x, y, type);
+        entities.add(enemy);
+        return enemy;
+    }
 
     public Tile[][] getMap() {
         return map;
     }
 
-    public List<GameObject> getEntities() {
-        return entities;
+    public synchronized List<GameObject> getEntities() {
+        return (List<GameObject>) this.entities.clone();
     }
 
     public Player getPlayer() {
@@ -115,4 +143,3 @@ public class GameWorld {
         return height;
     }
 }
-

@@ -5,7 +5,7 @@ import java.util.List;
 
 public class GameWorld {
     private final Tile[][] map;
-    private final List<GameObject> entities;
+    private final ArrayList<GameObject> entities;
     private Player player;
     private final int width;
     private final int height;
@@ -21,7 +21,7 @@ public class GameWorld {
     }
 
     private void initializeMap() {
-        // Create different types of tiles - each with its own sprite instance
+        // Create different types of tiles but reuse sprites
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 String tileType;
@@ -41,7 +41,6 @@ public class GameWorld {
                     tileType = "dirt";
                 }
 
-                // Create tile with direct sprite instance - no factory
                 map[y][x] = new Tile(x * 16, y * 16, tileType, walkable);
             }
         }
@@ -80,25 +79,58 @@ public class GameWorld {
     }
 
     private void initializeEntities() {
-        // Create player with direct sprite
+        // Create player
         player = new Player(width / 2 * 16, height / 2 * 16);
 
-        // Create enemies - each with their own sprite instance
+        // Create only 3 enemies initially - one of each type
         String[] enemyTypes = {"moblin", "octorok", "darknut"};
-        for (int i = 0; i < 100_000; i++) {
-            int x = (int)(Math.random() * (width - 2) + 1) * 16;
-            int y = (int)(Math.random() * (height - 2) + 1) * 16;
+        for (int i = 0; i < 3; i++) {
+            int x, y;
+            boolean validPosition;
+
+            do {
+                x = (int)(Math.random() * (width - 2) + 1) * 16;
+                y = (int)(Math.random() * (height - 2) + 1) * 16;
+                validPosition = isWalkable(x, y);
+            } while (!validPosition);
+
             String type = enemyTypes[i % enemyTypes.length];
             entities.add(new Enemy(x, y, type));
         }
+    }
+
+    public void addEnemy(Enemy enemy) {
+        entities.add(enemy);
+    }
+
+    // For spawning new enemies
+    public Enemy spawnEnemy() {
+        String[] enemyTypes = {"moblin", "octorok", "darknut"};
+        int x, y;
+        boolean validPosition;
+
+        do {
+            x = (int)(Math.random() * (width - 2) + 1) * 16;
+            y = (int)(Math.random() * (height - 2) + 1) * 16;
+            validPosition = isWalkable(x, y);
+        } while (!validPosition);
+
+        String type = enemyTypes[(int)(Math.random() * enemyTypes.length)];
+        Enemy enemy = new Enemy(x, y, type);
+        entities.add(enemy);
+        return enemy;
+    }
+
+    public int getSpriteCount() {
+        return map.length * map[0].length + entities.size() + 1; // Total number of sprites
     }
 
     public Tile[][] getMap() {
         return map;
     }
 
-    public List<GameObject> getEntities() {
-        return entities;
+    public synchronized List<GameObject> getEntities() {
+        return (List<GameObject>) this.entities.clone();
     }
 
     public Player getPlayer() {
@@ -116,10 +148,4 @@ public class GameWorld {
     public int getHeight() {
         return height;
     }
-
-    public int getSpriteCount() {
-        return map.length * map[0].length + entities.size() + 1; // Total number of sprites
-    }
 }
-
-

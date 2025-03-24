@@ -21,11 +21,40 @@ public class Game extends JFrame implements Runnable {
     private Thread gameThread;
 
     public Game() {
-        setTitle("Zelda-like Game with Flyweight Pattern");
+        setTitle("Zelda-like Game without Flyweight Pattern");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
         setLayout(new BorderLayout());
+
+        // Zelda-themed button panel with parchment background
+        JPanel buttonPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                // Parchment/scroll background color
+                g2d.setPaint(new Color(222, 208, 175));
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10));
+
+        // Create Zelda-styled buttons
+        JButton spawn1000Button = createZeldaButton("Spawn 1_000", "Add 1_000 enemies to the game");
+        spawn1000Button.addActionListener(e -> spawnEnemies(1_000));
+        buttonPanel.add(spawn1000Button);
+
+        JButton spawn10000Button = createZeldaButton("Spawn 10_000", "Add 10_000 enemies to the game");
+        spawn10000Button.addActionListener(e -> spawnEnemies(10_000));
+        buttonPanel.add(spawn10000Button);
+
+        JButton spawn100000Button = createZeldaButton("Spawn 100_000", "Add 100_000 enemies to the game");
+        spawn100000Button.addActionListener(e -> spawnEnemies(100_000));
+        buttonPanel.add(spawn100000Button);
+
+        add(buttonPanel, BorderLayout.NORTH);
 
         gameCanvas = new Canvas();
         gameCanvas.setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -74,6 +103,79 @@ public class Game extends JFrame implements Runnable {
         updateTimer.start();
 
         setVisible(true);
+    }
+
+    // Add method to spawn enemies
+    private void spawnEnemies(int count) {
+        for (int i = 0; i < count; i++) {
+            world.spawnEnemy();
+        }
+        System.out.println("Spawned " + count + " enemies. Total: " + world.getEntities().size());
+        memoryView.repaint();
+    }
+
+    // Helper method to create Zelda-themed buttons
+    private JButton createZeldaButton(String text, String tooltip) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Draw button background
+                Color goldColor = new Color(218, 165, 32);
+                Color darkGoldColor = new Color(184, 134, 11);
+
+                if (getModel().isPressed()) {
+                    g2d.setColor(darkGoldColor.darker());
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(goldColor.brighter());
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                } else {
+                    g2d.setColor(goldColor);
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                }
+
+                // Draw pixel-like border (classic NES look)
+                g2d.setColor(Color.BLACK);
+                g2d.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+                g2d.setColor(new Color(139, 69, 19)); // Brown border
+                g2d.drawRect(2, 2, getWidth() - 5, getHeight() - 5);
+
+                // Add bevel effect
+                g2d.setColor(new Color(255, 215, 0)); // Light gold for top/left edges
+                g2d.drawLine(1, 1, getWidth() - 2, 1); // Top
+                g2d.drawLine(1, 1, 1, getHeight() - 2); // Left
+
+                g2d.setColor(new Color(139, 101, 8)); // Dark gold for bottom/right edges
+                g2d.drawLine(1, getHeight() - 2, getWidth() - 2, getHeight() - 2); // Bottom
+                g2d.drawLine(getWidth() - 2, 1, getWidth() - 2, getHeight() - 2); // Right
+
+                // Draw text with pixel-like font
+                g2d.setColor(new Color(72, 61, 139)); // Dark blue-purple for text (classic Zelda)
+                g2d.setFont(new Font("Courier New", Font.BOLD, 14)); // Monospaced font for pixel-like look
+
+                FontMetrics fm = g2d.getFontMetrics();
+                int textWidth = fm.stringWidth(getText());
+                int textHeight = fm.getHeight();
+
+                g2d.drawString(getText(), (getWidth() - textWidth) / 2,
+                        (getHeight() + textHeight / 2) / 2);
+
+                g2d.dispose();
+            }
+        };
+
+        // Configure button appearance
+        button.setPreferredSize(new Dimension(120, 40));
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setToolTipText(tooltip);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        return button;
     }
 
     public synchronized void start() {
@@ -128,12 +230,12 @@ public class Game extends JFrame implements Runnable {
         // Update game logic here
         for (GameObject entity : world.getEntities()) {
             if (entity instanceof Enemy) {
-                ((Enemy) entity).move();
+                ((Enemy) entity).move(world);
             }
         }
     }
 
-    private void render() {
+    private synchronized void render() {
         BufferStrategy bs = gameCanvas.getBufferStrategy();
         if (bs == null) {
             gameCanvas.createBufferStrategy(2);
